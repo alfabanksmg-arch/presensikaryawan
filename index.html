@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Absensi Karyawan - ALFABANK Semarang</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active { border-bottom: 3px solid #1e40af; color: #1e40af; font-weight: 600; }
+        .subtab-active { background-color: #1e40af; color: #ffffff; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Header App Bar -->
+    <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center font-extrabold text-xl tracking-wider shadow">
+                    A
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg sm:text-xl leading-tight">ALFABANK SEMARANG</h1>
+                    <p class="text-xs text-indigo-200">Sistem Presensi & Management Karyawan Digital</p>
+                </div>
+            </div>
+
+            <!-- Live Clock Header -->
+            <div class="bg-indigo-950/70 border border-indigo-700/50 px-4 py-1.5 rounded-xl flex items-center space-x-3 text-right">
+                <i class="fa-regular fa-clock text-indigo-400 text-xl"></i>
+                <div>
+                    <div id="live-clock" class="font-mono text-base font-bold text-yellow-300">00:00:00</div>
+                    <div id="live-date" class="text-[10px] text-indigo-200">Senin, 1 Januari 2026</div>
+                </div>
+            </div>
+
+            <!-- Global Action Status -->
+            <div id="admin-header-status" class="flex items-center space-x-2">
+                <button onclick="switchTab('admin')" class="bg-indigo-800 hover:bg-indigo-700 text-xs px-3 py-1.5 rounded-lg border border-indigo-600 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span id="header-admin-btn-text">Login Admin</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-[61px] z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6">
+            <button id="tab-btn-absensi" onclick="switchTab('absensi')" class="py-3 px-1 text-sm tab-active transition flex items-center gap-2">
+                <i class="fa-solid fa-camera"></i> Absensi Digital
+            </button>
+            <button id="tab-btn-cuti" onclick="switchTab('cuti')" class="py-3 px-1 text-sm text-slate-600 hover:text-indigo-900 transition flex items-center gap-2">
+                <i class="fa-solid fa-file-signature"></i> Form Cuti / Izin
+            </button>
+            <button id="tab-btn-admin" onclick="switchTab('admin')" class="py-3 px-1 text-sm text-slate-600 hover:text-indigo-900 transition flex items-center gap-2">
+                <i class="fa-solid fa-table-cells"></i> Panel Admin & Database
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex-1 w-full">
+
+        <!-- Notification Banner -->
+        <div id="alert-box" class="hidden mb-6 p-4 rounded-xl border flex items-center justify-between text-sm transition-all duration-300">
+            <div class="flex items-center space-x-3">
+                <i id="alert-icon" class="fa-solid fa-info-circle text-lg"></i>
+                <span id="alert-message">Notifikasi sistem</span>
+            </div>
+            <button onclick="hideAlert()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- TAB 1: ABSENSI KARYAWAN -->
+        <div id="tab-content-absensi" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Column: Form & Webcam -->
+                <div class="lg:col-span-7 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+                        <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-user-check text-indigo-600"></i> Presensi Harian Karyawan
+                        </h2>
+                        <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-200">
+                            Geofencing Active
+                        </span>
+                    </div>
+
+                    <!-- Employee Selection -->
+                    <div>
+                        <label for="emp-select-absensi" class="block text-xs font-semibold text-slate-600 mb-1.5">PILIH KARYAWAN *</label>
+                        <select id="emp-select-absensi" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="">-- Pilih Nama Karyawan --</option>
+                        </select>
+                    </div>
+
+                    <!-- Webcam & Selfie Section -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold text-slate-600">FOTO SELFIE ABSENSI *</label>
+                        <div class="relative bg-slate-900 rounded-2xl overflow-hidden aspect-video max-h-[300px] flex items-center justify-center border-2 border-dashed border-slate-300">
+                            <!-- Live Camera Video -->
+                            <video id="webcam-video" autoplay playsinline class="w-full h-full object-cover"></video>
+                            
+                            <!-- Snapshot Preview Canvas -->
+                            <canvas id="photo-canvas" class="hidden"></canvas>
+                            <img id="captured-preview" class="hidden w-full h-full object-cover" alt="Captured Selfie" />
+
+                            <!-- Overlay Webcam Controls -->
+                            <div class="absolute bottom-3 left-0 right-0 flex justify-center space-x-3">
+                                <button id="snapshot-btn" onclick="takeSnapshot()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 transition">
+                                    <i class="fa-solid fa-camera"></i> Ambil Foto Selfie
+                                </button>
+                                <button id="retake-btn" onclick="retakePhoto()" class="hidden bg-slate-700 hover:bg-slate-600 text-white text-xs px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 transition">
+                                    <i class="fa-solid fa-rotate-left"></i> Foto Ulang
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Geofencing Status -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start space-x-3 text-xs">
+                        <div class="p-2 bg-indigo-100 text-indigo-700 rounded-lg mt-0.5">
+                            <i class="fa-solid fa-location-dot text-base"></i>
+                        </div>
+                        <div class="flex-1 space-y-1">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-slate-700">Lokasi Presensi (Kampus ALFABANK)</span>
+                                <span id="location-status-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                                    Memeriksa GPS...
+                                </span>
+                            </div>
+                            <p class="text-slate-500">Jl. Lamongan Raya No. 12, Bendan Ngisor, Gajahmungkur, Semarang</p>
+                            <div id="distance-info" class="text-slate-600 font-medium pt-1">Jarak: Mengukur jarak GPS...</div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <button onclick="doClockIn()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-right-to-bracket"></i> ABSEN MASUK
+                        </button>
+                        <button onclick="doClockOut()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-right-from-bracket"></i> ABSEN KELUAR
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Quick Logs -->
+                <div class="lg:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 flex flex-col">
+                    <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Aktivitas Absensi Terbaru
+                        </h3>
+                        <span class="text-xs text-slate-500">Hari Ini</span>
+                    </div>
+
+                    <!-- Mini Log List -->
+                    <div id="today-recent-logs" class="flex-1 overflow-y-auto space-y-3 max-h-[460px] pr-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB 2: FORM CUTI / IZIN -->
+        <div id="tab-content-cuti" class="hidden max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-file-signature text-indigo-600"></i> Pengajuan Cuti / Izin / Sakit
+                </h2>
+                <p class="text-xs text-slate-500 mt-1">Formulir resmi permohonan ketidakhadiran karyawan ALFABANK Semarang</p>
+            </div>
+
+            <form onsubmit="submitLeaveRequest(event)" class="space-y-4">
+                <div>
+                    <label for="emp-select-cuti" class="block text-xs font-semibold text-slate-600 mb-1.5">NAMA KARYAWAN *</label>
+                    <select id="emp-select-cuti" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="">-- Pilih Karyawan --</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="leave-type" class="block text-xs font-semibold text-slate-600 mb-1.5">JENIS PENGAJUAN *</label>
+                        <select id="leave-type" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="Izin">Izin Tidak Masuk</option>
+                            <option value="Sakit">Sakit (Surat Dokter)</option>
+                            <option value="Cuti Tahunan">Cuti Tahunan</option>
+                            <option value="Cuti Khusus">Cuti Khusus / Melahirkan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="leave-start-date" class="block text-xs font-semibold text-slate-600 mb-1.5">TANGGAL MULAI *</label>
+                        <input type="date" id="leave-start-date" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="leave-end-date" class="block text-xs font-semibold text-slate-600 mb-1.5">TANGGAL SELESAI *</label>
+                    <input type="date" id="leave-end-date" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label for="leave-reason" class="block text-xs font-semibold text-slate-600 mb-1.5">ALASAN / KETERANGAN *</label>
+                    <textarea id="leave-reason" rows="3" required placeholder="Tuliskan keterangan detail pengajuan..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Kirim Pengajuan ke Admin & Spreadsheet
+                </button>
+            </form>
+        </div>
+
+        <!-- TAB 3: PANEL ADMIN & DATABASE -->
+        <div id="tab-content-admin" class="hidden space-y-6">
+
+            <!-- ADMIN LOGIN FORM (If not logged in) -->
+            <div id="admin-login-view" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-md border border-slate-200 space-y-6">
+                <div class="text-center space-y-2">
+                    <div class="w-14 h-14 bg-indigo-100 text-indigo-700 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <h2 class="font-bold text-slate-800 text-xl">Login Admin ALFABANK</h2>
+                    <p class="text-xs text-slate-500">Masuk untuk mengelola data presensi, karyawan, dan Spreadsheet</p>
+                </div>
+
+                <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+                    <div>
+                        <label for="admin-user" class="block text-xs font-semibold text-slate-600 mb-1">USERNAME</label>
+                        <input type="text" id="admin-user" required value="admin" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="admin-pass" class="block text-xs font-semibold text-slate-600 mb-1">PASSWORD</label>
+                        <input type="password" id="admin-pass" required value="admin123" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-semibold py-3 rounded-xl shadow transition">
+                        Masuk Administrator
+                    </button>
+                </form>
+                <div class="bg-indigo-50 p-3 rounded-xl text-xs text-indigo-800 border border-indigo-100">
+                    <span class="font-semibold">Default Login:</span> Username: <code class="bg-indigo-100 px-1 rounded">admin</code> | Password: <code class="bg-indigo-100 px-1 rounded">admin123</code>
+                </div>
+            </div>
+
+            <!-- ADMIN PANEL DASHBOARD (If logged in) -->
+            <div id="admin-panel-view" class="hidden space-y-6">
+                
+                <!-- Admin Top Bar Controls -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+                    <div class="flex items-center space-x-3">
+                        <span class="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></span>
+                        <span class="font-bold text-slate-800 text-sm">Mode Administrator Aktif</span>
+                    </div>
+
+                    <!-- Admin Sub-navigation -->
+                    <div class="flex bg-slate-100 p-1 rounded-xl">
+                        <button id="subtab-btn-presensi" onclick="switchAdminSubTab('presensi')" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg subtab-active transition">
+                            <i class="fa-solid fa-list-check"></i> Data Presensi
+                        </button>
+                        <button id="subtab-btn-karyawan" onclick="switchAdminSubTab('karyawan')" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
+                            <i class="fa-solid fa-users"></i> Data Karyawan
+                        </button>
+                        <button id="subtab-btn-spreadsheet" onclick="switchAdminSubTab('spreadsheet')" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
+                            <i class="fa-solid fa-file-excel"></i> Integrasi Google Sheets
+                        </button>
+                    </div>
+
+                    <button onclick="handleAdminLogout()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3.5 py-2 rounded-xl border border-slate-300 transition">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar Admin
+                    </button>
+                </div>
+
+                <!-- SUBTAB 1: LOG PRESENSI MANAGEMENT -->
+                <div id="admin-subcontent-presensi" class="space-y-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <div class="flex flex-wrap justify-between items-center gap-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Rekapitulasi Presensi Karyawan</h3>
+                                <p class="text-xs text-slate-500">Kelola dan ubah data kehadiran karyawan jika terdapat perbaikan</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+                                    <i class="fa-solid fa-file-csv"></i> Export CSV Spreadsheet
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Presensi Table -->
+                        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                            <table class="w-full text-left text-xs text-slate-700">
+                                <thead class="bg-slate-100 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3">Waktu / Tanggal</th>
+                                        <th class="p-3">NIP & Nama</th>
+                                        <th class="p-3">Tipe Presensi</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3">Foto Selfie</th>
+                                        <th class="p-3">Lokasi GPS</th>
+                                        <th class="p-3">Keterangan</th>
+                                        <th class="p-3 text-center">Aksi (Admin)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-log-table-body" class="divide-y divide-slate-100">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBTAB 2: KARYAWAN MANAGEMENT -->
+                <div id="admin-subcontent-karyawan" class="hidden space-y-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <div class="flex flex-wrap justify-between items-center gap-4">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">Master Data Karyawan ALFABANK</h3>
+                                <p class="text-xs text-slate-500">Tambah, edit, atau hapus data karyawan terdaftar</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <label class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3.5 py-2 rounded-xl border border-slate-300 transition cursor-pointer flex items-center gap-2">
+                                    <i class="fa-solid fa-file-import"></i> Import CSV
+                                    <input type="file" accept=".csv" onchange="importEmployeeCSV(event)" class="hidden">
+                                </label>
+                                <button onclick="openAddEmployeeModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-2">
+                                    <i class="fa-solid fa-user-plus"></i> Tambah Karyawan Baru
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Employees Table -->
+                        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                            <table class="w-full text-left text-xs text-slate-700">
+                                <thead class="bg-slate-100 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3">NIP</th>
+                                        <th class="p-3">Nama Lengkap</th>
+                                        <th class="p-3">Jabatan</th>
+                                        <th class="p-3">Divisi / Unit</th>
+                                        <th class="p-3 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employee-table-body" class="divide-y divide-slate-100">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBTAB 3: GOOGLE SHEETS SPREADSHEET CONFIG -->
+                <div id="admin-subcontent-spreadsheet" class="hidden space-y-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                        <div class="border-b border-slate-100 pb-3">
+                            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-cloud-arrow-up text-emerald-600"></i> Pengaturan Webhook Google Sheets
+                            </h3>
+                            <p class="text-xs text-slate-500">Hubungkan aplikasi dengan database Google Sheets melalui Google Apps Script Web App</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label for="cfg-webhook-input" class="block text-xs font-semibold text-slate-600 mb-1.5">GOOGLE APPS SCRIPT WEBHOOK URL</label>
+                                <div class="flex space-x-2">
+                                    <input type="url" id="cfg-webhook-input" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                    <button onclick="saveWebhookConfig()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold transition">
+                                        Simpan URL
+                                    </button>
+                                    <button onclick="testWebhook()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold transition">
+                                        Test Kirim Data
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Apps Script Tutorial Code Box -->
+                            <div class="bg-slate-900 text-slate-200 p-4 rounded-xl text-xs space-y-2">
+                                <div class="flex justify-between items-center text-slate-400">
+                                    <span class="font-bold text-emerald-400">Kode Google Apps Script (Code.gs)</span>
+                                    <span class="text-[10px]">Copy paste kode ini di Extensions &gt; Apps Script spreadsheet Anda</span>
+                                </div>
+                                <pre class="bg-slate-950 p-3 rounded-lg font-mono text-[11px] overflow-x-auto text-emerald-300">
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([
+    data.timestamp || new Date(),
+    data.nip,
+    data.nama,
+    data.tipe,
+    data.status,
+    data.lokasi,
+    data.keterangan
+  ]);
+  return ContentService.createTextOutput(JSON.stringify({"result": "success"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Change Admin Password Card -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-md space-y-4">
+                        <h4 class="font-bold text-slate-800 text-sm">Ubah Password Administrator</h4>
+                        <form onsubmit="changeAdminPassword(event)" class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-600 mb-1">Username Admin Baru</label>
+                                <input type="text" id="new-admin-user" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-600 mb-1">Password Admin Baru</label>
+                                <input type="password" id="new-admin-pass" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                            </div>
+                            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs py-2.5 rounded-xl font-semibold transition">
+                                Update Credential Admin
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- MODAL 1: ADD / EDIT EMPLOYEE -->
+    <div id="modal-employee" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 id="modal-employee-title" class="font-bold text-slate-800 text-base">Tambah Karyawan Baru</h3>
+                <button onclick="closeEmployeeModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveEmployee(event)" class="space-y-3">
+                <input type="hidden" id="emp-edit-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">NIP (Nomor Induk Pegawai) *</label>
+                    <input type="text" id="emp-input-nip" required placeholder="ALF-006" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap & Gelar *</label>
+                    <input type="text" id="emp-input-nama" required placeholder="Ahmad Subandi, S.T" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Jabatan *</label>
+                    <input type="text" id="emp-input-jabatan" required placeholder="Instruktur Desain Grafis" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Divisi / Departemen *</label>
+                    <input type="text" id="emp-input-divisi" required placeholder="Akademik" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeEmployeeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Batal</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-xs font-semibold shadow">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: EDIT PRESENSI LOG -->
+    <div id="modal-edit-presensi" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-base">Edit Data Presensi Karyawan</h3>
+                <button onclick="closeEditPresensiModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="savePresensiEdit(event)" class="space-y-3">
+                <input type="hidden" id="edit-presensi-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Waktu & Tanggal</label>
+                    <input type="text" id="edit-presensi-waktu" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipe Presensi</label>
+                    <select id="edit-presensi-tipe" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                        <option value="Absen Masuk">Absen Masuk</option>
+                        <option value="Absen Keluar">Absen Keluar</option>
+                        <option value="Izin">Izin</option>
+                        <option value="Sakit">Sakit</option>
+                        <option value="Cuti Tahunan">Cuti Tahunan</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Status Kehadiran</label>
+                    <select id="edit-presensi-status" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                        <option value="Tepat Waktu">Tepat Waktu</option>
+                        <option value="Terlambat">Terlambat</option>
+                        <option value="Disetujui">Disetujui (Cuti/Izin)</option>
+                        <option value="Ditolak">Ditolak</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan / Alasan</label>
+                    <input type="text" id="edit-presensi-ket" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs">
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeEditPresensiModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">Batal</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-xs font-semibold shadow">Update Presensi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        /* Global Data State */
+        const initialEmployees = [
+            { id: '1', nip: 'ALF-001', nama: 'Budi Santoso, S.Kom', jabatan: 'Instruktur Utama Web Dev', divisi: 'Akademik' },
+            { id: '2', nip: 'ALF-002', nama: 'Siti Rahma, M.M', jabatan: 'Kepala HRD & Keuangan', divisi: 'Keuangan & HRD' },
+            { id: '3', nip: 'ALF-003', nama: 'Andi Wijaya, A.Md', jabatan: 'Staf Marketing', divisi: 'Pemasaran' },
+            { id: '4', nip: 'ALF-004', nama: 'Rizky Pratama, S.T', jabatan: 'Network & System Administrator', divisi: 'IT & Infrastructure' },
+            { id: '5', nip: 'ALF-005', nama: 'Dewi Lestari, S.Pd', jabatan: 'Instruktur Bahasa Inggris', divisi: 'Akademik' }
+        ];
+
+        // Campus Geofence Location (ALFABANK Semarang - Jl. Lamongan Raya No. 12)
+        const KAMPUS_LAT = -7.00078;
+        const KAMPUS_LNG = 110.40742;
+        const MAX_DISTANCE_KM = 0.5; // 500 Meters geofence radius
+
+        let isAdminLoggedIn = JSON.parse(localStorage.getItem('alfabank_admin_logged')) || false;
+        let adminAuth = JSON.parse(localStorage.getItem('alfabank_admin_auth')) || { user: 'admin', pass: 'admin123' };
+        let employees = JSON.parse(localStorage.getItem('alfabank_employees')) || initialEmployees;
+        let attendanceLogs = JSON.parse(localStorage.getItem('alfabank_attendance')) || [];
+        
+        const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzRNwDxbKLc2yRG_o9eGNa1aw4R83BjlIvHykfpNUA8kwGNN051VngHS2Xja63NyXzz/exec';
+        let webhookUrl = localStorage.getItem('alfabank_webhook_url') || DEFAULT_WEBHOOK_URL;
+        
+        let capturedPhoto = null;
+        let videoStream = null;
+        let userLat = null;
+        let userLng = null;
+        let userDistanceKm = null;
+
+        window.onload = function() {
+            updateClock();
+            setInterval(updateClock, 1000);
+            renderEmployeeSelect();
+            renderAttendanceTable();
+            renderAdminEmployeeTable();
+            renderRecentLogs();
+            initWebcam();
+            getGeoLocation();
+            
+            // Set input webhook value
+            const webhookInput = document.getElementById('cfg-webhook-input');
+            if (webhookInput) {
+                webhookInput.value = webhookUrl;
+            }
+
+            // Sync admin UI header state
+            updateAdminHeaderUI();
+        };
+
+        // Live Clock Function
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('id-ID', { hour12: false });
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('id-ID', dateOptions);
+            
+            const clockEl = document.getElementById('live-clock');
+            const dateEl = document.getElementById('live-date');
+            if (clockEl) clockEl.textContent = timeStr;
+            if (dateEl) dateEl.textContent = dateStr;
+        }
+
+        // Alert Banner Helper
+        function showAlert(msg, type = 'info') {
+            const box = document.getElementById('alert-box');
+            const icon = document.getElementById('alert-icon');
+            const message = document.getElementById('alert-message');
+
+            box.className = "mb-6 p-4 rounded-xl border flex items-center justify-between text-sm transition-all duration-300 ";
+            if (type === 'success') {
+                box.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+                icon.className = "fa-solid fa-circle-check text-emerald-600 text-lg";
+            } else if (type === 'error') {
+                box.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-800');
+                icon.className = "fa-solid fa-circle-exclamation text-rose-600 text-lg";
+            } else {
+                box.classList.add('bg-indigo-50', 'border-indigo-200', 'text-indigo-800');
+                icon.className = "fa-solid fa-info-circle text-indigo-600 text-lg";
+            }
+
+            message.textContent = msg;
+            box.classList.remove('hidden');
+
+            setTimeout(() => {
+                box.classList.add('hidden');
+            }, 6000);
+        }
+
+        function hideAlert() {
+            document.getElementById('alert-box').classList.add('hidden');
+        }
+
+        // Geolocation Logic
+        function getGeoLocation() {
+            const badge = document.getElementById('location-status-badge');
+            const info = document.getElementById('distance-info');
+
+            if (!navigator.geolocation) {
+                badge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800";
+                badge.textContent = "GPS Tidak Didukung";
+                info.textContent = "Browser Anda tidak mendukung Geolocation.";
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userLat = pos.coords.latitude;
+                    userLng = pos.coords.longitude;
+                    userDistanceKm = calculateDistance(userLat, userLng, KAMPUS_LAT, KAMPUS_LNG);
+                    
+                    const distMeter = Math.round(userDistanceKm * 1000);
+
+                    if (userDistanceKm <= MAX_DISTANCE_KM) {
+                        badge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800";
+                        badge.textContent = "Dalam Jangkauan Geofence";
+                        info.textContent = `Jarak Anda: ${distMeter} meter dari Kampus ALFABANK (Memenuhi Syarat)`;
+                    } else {
+                        badge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800";
+                        badge.textContent = "Di Luar Jangkauan";
+                        info.textContent = `Jarak Anda: ${userDistanceKm.toFixed(2)} km (Di luar radius ${MAX_DISTANCE_KM * 1000}m)`;
+                    }
+                },
+                (err) => {
+                    badge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800";
+                    badge.textContent = "GPS Diizinkan Tanpa Akses";
+                    info.textContent = "Gagal mengambil koordinat GPS. Pastikan Izin Lokasi di-aktifkan.";
+                },
+                { enableHighAccuracy: true }
+            );
+        }
+
+        // Haversine Formula for Distance Calculation (in KM)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth Radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // Webcam Logic
+        async function initWebcam() {
+            const video = document.getElementById('webcam-video');
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                video.srcObject = videoStream;
+            } catch (err) {
+                console.warn("Webcam tidak dapat diakses:", err);
+            }
+        }
+
+        function takeSnapshot() {
+            const video = document.getElementById('webcam-video');
+            const canvas = document.getElementById('photo-canvas');
+            const preview = document.getElementById('captured-preview');
+            const snapBtn = document.getElementById('snapshot-btn');
+            const retakeBtn = document.getElementById('retake-btn');
+
+            if (!video.srcObject) {
+                showAlert("Kamera tidak aktif/tersedia. Foto selfie dilewati.", "error");
+                return;
+            }
+
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
+            preview.src = capturedPhoto;
+
+            video.classList.add('hidden');
+            preview.classList.remove('hidden');
+            snapBtn.classList.add('hidden');
+            retakeBtn.classList.remove('hidden');
+        }
+
+        function retakePhoto() {
+            const video = document.getElementById('webcam-video');
+            const preview = document.getElementById('captured-preview');
+            const snapBtn = document.getElementById('snapshot-btn');
+            const retakeBtn = document.getElementById('retake-btn');
+
+            capturedPhoto = null;
+            preview.classList.add('hidden');
+            video.classList.remove('hidden');
+            snapBtn.classList.remove('hidden');
+            retakeBtn.classList.add('hidden');
+        }
+
+        function renderEmployeeSelect() {
+            const selAbsen = document.getElementById('emp-select-absensi');
+            const selCuti = document.getElementById('emp-select-cuti');
+
+            let html = '<option value="">-- Pilih Nama Karyawan --</option>';
+            employees.forEach(emp => {
+                html += `<option value="${emp.id}">${emp.nip} - ${emp.nama} (${emp.jabatan})</option>`;
+            });
+
+            if (selAbsen) selAbsen.innerHTML = html;
+            if (selCuti) selCuti.innerHTML = html;
+        }
+
+        function switchTab(tab) {
+            document.getElementById('tab-content-absensi').classList.add('hidden');
+            document.getElementById('tab-content-cuti').classList.add('hidden');
+            document.getElementById('tab-content-admin').classList.add('hidden');
+
+            document.getElementById('tab-btn-absensi').className = "py-3 px-1 text-sm text-slate-600 hover:text-indigo-900 transition flex items-center gap-2";
+            document.getElementById('tab-btn-cuti').className = "py-3 px-1 text-sm text-slate-600 hover:text-indigo-900 transition flex items-center gap-2";
+            document.getElementById('tab-btn-admin').className = "py-3 px-1 text-sm text-slate-600 hover:text-indigo-900 transition flex items-center gap-2";
+
+            if (tab === 'absensi') {
+                document.getElementById('tab-content-absensi').classList.remove('hidden');
+                document.getElementById('tab-btn-absensi').className = "py-3 px-1 text-sm tab-active transition flex items-center gap-2";
+            } else if (tab === 'cuti') {
+                document.getElementById('tab-content-cuti').classList.remove('hidden');
+                document.getElementById('tab-btn-cuti').className = "py-3 px-1 text-sm tab-active transition flex items-center gap-2";
+            } else if (tab === 'admin') {
+                document.getElementById('tab-content-admin').classList.remove('hidden');
+                document.getElementById('tab-btn-admin').className = "py-3 px-1 text-sm tab-active transition flex items-center gap-2";
+            }
+        }
+
+        function switchAdminSubTab(sub) {
+            document.getElementById('admin-subcontent-presensi').classList.add('hidden');
+            document.getElementById('admin-subcontent-karyawan').classList.add('hidden');
+            document.getElementById('admin-subcontent-spreadsheet').classList.add('hidden');
+
+            document.getElementById('subtab-btn-presensi').className = "px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition";
+            document.getElementById('subtab-btn-karyawan').className = "px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition";
+            document.getElementById('subtab-btn-spreadsheet').className = "px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition";
+
+            if (sub === 'presensi') {
+                document.getElementById('admin-subcontent-presensi').classList.remove('hidden');
+                document.getElementById('subtab-btn-presensi').className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg subtab-active transition";
+            } else if (sub === 'karyawan') {
+                document.getElementById('admin-subcontent-karyawan').classList.remove('hidden');
+                document.getElementById('subtab-btn-karyawan').className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg subtab-active transition";
+            } else if (sub === 'spreadsheet') {
+                document.getElementById('admin-subcontent-spreadsheet').classList.remove('hidden');
+                document.getElementById('subtab-btn-spreadsheet').className = "px-3.5 py-1.5 text-xs font-semibold rounded-lg subtab-active transition";
+            }
+        }
+
+        function doClockIn() { processAttendance('Absen Masuk'); }
+        function doClockOut() { processAttendance('Absen Keluar'); }
+
+        function processAttendance(tipe) {
+            const empId = document.getElementById('emp-select-absensi').value;
+            if (!empId) {
+                showAlert("Silakan pilih Nama Karyawan terlebih dahulu!", "error");
+                return;
+            }
+
+            const emp = employees.find(e => e.id === empId);
+            const now = new Date();
+            const timeStr = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID');
+            
+            // Check work time status (8:00 AM threshold for clock-in)
+            let status = 'Tepat Waktu';
+            if (tipe === 'Absen Masuk' && (now.getHours() > 8 || (now.getHours() === 8 && now.getMinutes() > 15))) {
+                status = 'Terlambat';
+            }
+
+            const locationStr = userDistanceKm !== null 
+                ? (userDistanceKm <= MAX_DISTANCE_KM ? `Kampus ALFABANK (${Math.round(userDistanceKm * 1000)}m)` : `Luar Geofence (${userDistanceKm.toFixed(2)}km)`)
+                : 'GPS Off';
+
+            const logEntry = {
+                id: Date.now().toString(),
+                timestamp: timeStr,
+                nip: emp.nip,
+                nama: emp.nama,
+                tipe: tipe,
+                status: status,
+                lokasi: locationStr,
+                foto: capturedPhoto || 'No Selfie Captured',
+                keterangan: status === 'Terlambat' ? 'Terlambat Masuk' : 'Presensi Mandiri Digital'
+            };
+
+            // Save to Local Data
+            attendanceLogs.unshift(logEntry);
+            localStorage.setItem('alfabank_attendance', JSON.stringify(attendanceLogs));
+
+            // Sync to Google Sheets
+            syncToGoogleSheets(logEntry);
+
+            showAlert(`Berhasil melakukan ${tipe} untuk ${emp.nama}! Status: ${status}`, status === 'Terlambat' ? 'error' : 'success');
+            
+            renderRecentLogs();
+            renderAttendanceTable();
+            retakePhoto();
+        }
+
+        function submitLeaveRequest(e) {
+            e.preventDefault();
+            const empId = document.getElementById('emp-select-cuti').value;
+            const emp = employees.find(item => item.id === empId);
+            const type = document.getElementById('leave-type').value;
+            const startDate = document.getElementById('leave-start-date').value;
+            const endDate = document.getElementById('leave-end-date').value;
+            const reason = document.getElementById('leave-reason').value;
+
+            const now = new Date();
+            const logEntry = {
+                id: Date.now().toString(),
+                timestamp: now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID'),
+                nip: emp.nip,
+                nama: emp.nama,
+                tipe: type,
+                status: 'Disetujui',
+                lokasi: 'Pengajuan Form',
+                foto: 'N/A',
+                keterangan: `Periode: ${startDate} s/d ${endDate}. Alasan: ${reason}`
+            };
+
+            attendanceLogs.unshift(logEntry);
+            localStorage.setItem('alfabank_attendance', JSON.stringify(attendanceLogs));
+
+            syncToGoogleSheets(logEntry);
+            showAlert(`Pengajuan ${type} atas nama ${emp.nama} berhasil dikirim dan dicatat.`, "success");
+            
+            e.target.reset();
+            renderRecentLogs();
+            renderAttendanceTable();
+        }
+
+        async function syncToGoogleSheets(data) {
+            if (!webhookUrl || typeof webhookUrl !== 'string' || webhookUrl.trim() === '') return;
+            try {
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                console.log("Data dispatched to Google Sheets Webhook");
+            } catch (err) {
+                console.error("Error sending to Google Sheets:", err);
+            }
+        }
+
+        function renderRecentLogs() {
+            const container = document.getElementById('today-recent-logs');
+            if (!container) return;
+
+            if (attendanceLogs.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-8">Belum ada aktivitas presensi hari ini.</p>`;
+                return;
+            }
+
+            let html = '';
+            attendanceLogs.slice(0, 8).forEach(log => {
+                const isEntry = log.tipe === 'Absen Masuk';
+                const badgeColor = log.status === 'Terlambat' ? 'bg-amber-100 text-amber-800' : (isEntry ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800');
+                
+                html += `
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-xs">
+                    <div class="space-y-0.5">
+                        <div class="font-bold text-slate-800">${log.nama}</div>
+                        <div class="text-[11px] text-slate-500">${log.nip} • ${log.tipe}</div>
+                        <div class="text-[10px] text-slate-400"><i class="fa-regular fa-clock"></i> ${log.timestamp}</div>
+                    </div>
+                    <span class="px-2 py-1 rounded-md text-[10px] font-bold ${badgeColor}">${log.status}</span>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // Admin Authentication Logic
+        function handleAdminLogin(event) {
+            if (event) event.preventDefault();
+            const user = document.getElementById('admin-user').value;
+            const pass = document.getElementById('admin-pass').value;
+
+            if (user === adminAuth.user && pass === adminAuth.pass) {
+                isAdminLoggedIn = true;
+                localStorage.setItem('alfabank_admin_logged', JSON.stringify(true));
+                updateAdminHeaderUI();
+                showAlert("Login Administrator Berhasil!", "success");
+            } else {
+                showAlert("Username atau Password Admin Salah!", "error");
+            }
+        }
+
+        function handleAdminLogout() {
+            isAdminLoggedIn = false;
+            localStorage.setItem('alfabank_admin_logged', JSON.stringify(false));
+            updateAdminHeaderUI();
+            showAlert("Anda telah keluar dari mode Admin.", "info");
+        }
+
+        function updateAdminHeaderUI() {
+            const loginView = document.getElementById('admin-login-view');
+            const panelView = document.getElementById('admin-panel-view');
+            const headerBtnText = document.getElementById('header-admin-btn-text');
+
+            if (isAdminLoggedIn) {
+                loginView.classList.add('hidden');
+                panelView.classList.remove('hidden');
+                headerBtnText.textContent = "Mode Admin (Aktif)";
+            } else {
+                loginView.classList.remove('hidden');
+                panelView.classList.add('hidden');
+                headerBtnText.textContent = "Login Admin";
+            }
+        }
+
+        function renderAttendanceTable() {
+            const tbody = document.getElementById('attendance-log-table-body');
+            if (!tbody) return;
+
+            if (attendanceLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400 italic">Belum ada log presensi tersimpan.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            attendanceLogs.forEach(log => {
+                const photoHtml = log.foto && log.foto.startsWith('data:image') 
+                    ? `<img src="${log.foto}" class="w-8 h-8 rounded-lg object-cover border" alt="Selfie thumbnail">`
+                    : `<span class="text-[10px] text-slate-400">No Photo</span>`;
+
+                html += `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-mono text-[11px]">${log.timestamp}</td>
+                    <td class="p-3 font-medium">${log.nama}<br><span class="text-[10px] text-slate-400">${log.nip}</span></td>
+                    <td class="p-3 font-semibold text-slate-700">${log.tipe}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${log.status === 'Terlambat' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}">${log.status}</span></td>
+                    <td class="p-3">${photoHtml}</td>
+                    <td class="p-3 text-[11px] text-slate-500">${log.lokasi}</td>
+                    <td class="p-3 text-[11px] text-slate-600">${log.keterangan || '-'}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="editPresensi('${log.id}')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-[11px]"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                        <button onclick="deletePresensi('${log.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2 py-1 rounded text-[11px]"><i class="fa-solid fa-trash"></i> Hapus</button>
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function renderAdminEmployeeTable() {
+            const tbody = document.getElementById('employee-table-body');
+            if (!tbody) return;
+
+            let html = '';
+            employees.forEach(emp => {
+                html += `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-mono font-bold text-indigo-700">${emp.nip}</td>
+                    <td class="p-3 font-medium">${emp.nama}</td>
+                    <td class="p-3">${emp.jabatan}</td>
+                    <td class="p-3">${emp.divisi}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="editEmployee('${emp.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded text-[11px]"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button onclick="deleteEmployee('${emp.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded text-[11px]"><i class="fa-solid fa-trash"></i> Hapus</button>
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        /* Edit Presensi Logic */
+        function editPresensi(id) {
+            const log = attendanceLogs.find(l => l.id === id);
+            if (!log) return;
+
+            document.getElementById('edit-presensi-id').value = log.id;
+            document.getElementById('edit-presensi-waktu').value = log.timestamp;
+            document.getElementById('edit-presensi-tipe').value = log.tipe;
+            document.getElementById('edit-presensi-status').value = log.status;
+            document.getElementById('edit-presensi-ket').value = log.keterangan || '';
+            document.getElementById('modal-edit-presensi').classList.remove('hidden');
+        }
+
+        function closeEditPresensiModal() {
+            document.getElementById('modal-edit-presensi').classList.add('hidden');
+        }
+
+        function savePresensiEdit(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-presensi-id').value;
+            const index = attendanceLogs.findIndex(l => l.id === id);
+
+            if (index !== -1) {
+                attendanceLogs[index].timestamp = document.getElementById('edit-presensi-waktu').value;
+                attendanceLogs[index].tipe = document.getElementById('edit-presensi-tipe').value;
+                attendanceLogs[index].status = document.getElementById('edit-presensi-status').value;
+                attendanceLogs[index].keterangan = document.getElementById('edit-presensi-ket').value;
+
+                localStorage.setItem('alfabank_attendance', JSON.stringify(attendanceLogs));
+                renderAttendanceTable();
+                renderRecentLogs();
+                closeEditPresensiModal();
+                showAlert("Data presensi berhasil diperbarui!", "success");
+            }
+        }
+
+        function deletePresensi(id) {
+            attendanceLogs = attendanceLogs.filter(l => l.id !== id);
+            localStorage.setItem('alfabank_attendance', JSON.stringify(attendanceLogs));
+            renderAttendanceTable();
+            renderRecentLogs();
+            showAlert("Log presensi dihapus", "info");
+        }
+
+        /* Employee CRUD Modals */
+        function openAddEmployeeModal() {
+            document.getElementById('modal-employee-title').textContent = "Tambah Karyawan Baru";
+            document.getElementById('emp-edit-id').value = "";
+            document.getElementById('emp-input-nip').value = "";
+            document.getElementById('emp-input-nama').value = "";
+            document.getElementById('emp-input-jabatan').value = "";
+            document.getElementById('emp-input-divisi').value = "";
+            document.getElementById('modal-employee').classList.remove('hidden');
+        }
+
+        function editEmployee(id) {
+            const emp = employees.find(e => e.id === id);
+            if (!emp) return;
+
+            document.getElementById('modal-employee-title').textContent = "Edit Data Karyawan";
+            document.getElementById('emp-edit-id').value = emp.id;
+            document.getElementById('emp-input-nip').value = emp.nip;
+            document.getElementById('emp-input-nama').value = emp.nama;
+            document.getElementById('emp-input-jabatan').value = emp.jabatan;
+            document.getElementById('emp-input-divisi').value = emp.divisi;
+            document.getElementById('modal-employee').classList.remove('hidden');
+        }
+
+        function closeEmployeeModal() {
+            document.getElementById('modal-employee').classList.add('hidden');
+        }
+
+        function saveEmployee(e) {
+            e.preventDefault();
+            const editId = document.getElementById('emp-edit-id').value;
+            const nip = document.getElementById('emp-input-nip').value;
+            const nama = document.getElementById('emp-input-nama').value;
+            const jabatan = document.getElementById('emp-input-jabatan').value;
+            const divisi = document.getElementById('emp-input-divisi').value;
+
+            if (editId) {
+                const idx = employees.findIndex(e => e.id === editId);
+                if (idx !== -1) {
+                    employees[idx] = { id: editId, nip, nama, jabatan, divisi };
+                }
+            } else {
+                employees.push({ id: Date.now().toString(), nip, nama, jabatan, divisi });
+            }
+
+            localStorage.setItem('alfabank_employees', JSON.stringify(employees));
+            renderEmployeeSelect();
+            renderAdminEmployeeTable();
+            closeEmployeeModal();
+            showAlert("Data Karyawan berhasil disimpan!", "success");
+        }
+
+        function deleteEmployee(id) {
+            employees = employees.filter(e => e.id !== id);
+            localStorage.setItem('alfabank_employees', JSON.stringify(employees));
+            renderEmployeeSelect();
+            renderAdminEmployeeTable();
+            showAlert("Data Karyawan telah dihapus", "info");
+        }
+
+        function saveWebhookConfig() {
+            const val = document.getElementById('cfg-webhook-input').value.trim();
+            webhookUrl = val;
+            localStorage.setItem('alfabank_webhook_url', val);
+            showAlert("URL Webhook Google Sheets disetujui & disimpan!", "success");
+        }
+
+        function testWebhook() {
+            const testPayload = {
+                timestamp: new Date().toLocaleString('id-ID'),
+                nip: 'TEST-000',
+                nama: 'Pengujian Webhook',
+                tipe: 'Tes Koneksi',
+                status: 'Sukses',
+                lokasi: 'Kampus ALFABANK',
+                keterangan: 'Koneksi otomatis dari web absensi berhasil!'
+            };
+            syncToGoogleSheets(testPayload);
+            showAlert("Sinyal Test dikirim ke Google Sheets. Periksa spreadsheet Anda!", "info");
+        }
+
+        function changeAdminPassword(e) {
+            e.preventDefault();
+            const newUser = document.getElementById('new-admin-user').value;
+            const newPass = document.getElementById('new-admin-pass').value;
+
+            adminAuth = { user: newUser, pass: newPass };
+            localStorage.setItem('alfabank_admin_auth', JSON.stringify(adminAuth));
+            showAlert("Username & Password Admin berhasil diupdate!", "success");
+        }
+
+        function exportToCSV() {
+            if (attendanceLogs.length === 0) {
+                showAlert("Tidak ada data presensi untuk di-export", "error");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,Waktu,NIP,Nama,Tipe,Status,Lokasi,Keterangan\n";
+            attendanceLogs.forEach(log => {
+                const row = `"${log.timestamp}","${log.nip}","${log.nama}","${log.tipe}","${log.status}","${log.lokasi}","${log.keterangan || ''}"`;
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Absensi_ALFABANK_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importEmployeeCSV(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const lines = evt.target.result.split('\n');
+                lines.forEach((line, idx) => {
+                    if (idx === 0 || !line.trim()) return;
+                    const cols = line.split(',').map(c => c.replace(/"/g, '').trim());
+                    if (cols.length >= 4) {
+                        employees.push({
+                            id: Date.now().toString() + idx,
+                            nip: cols[0],
+                            nama: cols[1],
+                            jabatan: cols[2],
+                            divisi: cols[3]
+                        });
+                    }
+                });
+                localStorage.setItem('alfabank_employees', JSON.stringify(employees));
+                renderEmployeeSelect();
+                renderAdminEmployeeTable();
+                showAlert("Data Karyawan berhasil di-import dari CSV!", "success");
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
